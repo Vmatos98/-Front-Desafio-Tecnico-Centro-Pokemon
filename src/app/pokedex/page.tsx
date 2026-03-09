@@ -21,8 +21,10 @@ export default function PokedexPage() {
   
   const [myPage, setMyPage] = useState(1);
   const [myTotalPages, setMyTotalPages] = useState(1);
+  const [myTotalItems, setMyTotalItems] = useState(0);
   const [communityPage, setCommunityPage] = useState(1);
   const [communityTotalPages, setCommunityTotalPages] = useState(1);
+  const [communityTotalItems, setCommunityTotalItems] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +50,11 @@ export default function PokedexPage() {
 
       setMyPokemons(fetchedMine.data.sort((a: Pokemon, b: Pokemon) => b.id - a.id));
       setMyTotalPages(fetchedMine.meta.totalPages);
+      setMyTotalItems(fetchedMine.meta.totalItems);
 
       setCommunityPokemons(fetchedOthers.data.sort((a: Pokemon, b: Pokemon) => b.id - a.id));
       setCommunityTotalPages(fetchedOthers.meta.totalPages);
+      setCommunityTotalItems(fetchedOthers.meta.totalItems);
     } catch (err: unknown) {
       console.error('Failed to fetch Pokedex data:', err);
       const axiosError = err as AxiosError;
@@ -82,7 +86,8 @@ export default function PokedexPage() {
 
   const handleModalSuccess = (pokemon: Pokemon, mode: ModalMode) => {
     if (mode === 'add') {
-      setMyPokemons(prev => [pokemon, ...prev]);
+      setMyPokemons(prev => [pokemon, ...prev].slice(0, 8)); // keep consistent with pagination if desired, or just let fetchData handle it. A refetch might be better, but we can just prepend.
+      setMyTotalItems(prev => prev + 1);
     } else if (mode === 'edit') {
       setMyPokemons(prev => prev.map(p => p.id === pokemon.id ? pokemon : p));
     }
@@ -98,6 +103,7 @@ export default function PokedexPage() {
     try {
       await pokemonService.remove(pokemonToTransfer.id);
       setMyPokemons(prev => prev.filter(p => p.id !== pokemonToTransfer.id));
+      setMyTotalItems(prev => Math.max(0, prev - 1));
       toast.success(`${pokemonToTransfer.name} transferido com sucesso.`);
       setPokemonToTransfer(null);
     } catch (err) {
@@ -193,7 +199,7 @@ export default function PokedexPage() {
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 Meus Pokémons
                 <span className="bg-zinc-800 text-zinc-400 py-0.5 px-2.5 rounded-full text-sm font-medium">
-                  {myPokemons.length}
+                  {myTotalItems}
                 </span>
               </h3>
 
@@ -244,7 +250,7 @@ export default function PokedexPage() {
                 <h3 className="text-lg font-bold text-zinc-300 mb-6 flex items-center gap-2">
                   Pokémons da Comunidade
                   <span className="bg-zinc-800/50 text-zinc-500 py-0.5 px-2.5 rounded-full text-xs font-medium border border-zinc-800">
-                    {communityPokemons.length}
+                    {communityTotalItems}
                   </span>
                 </h3>
 
