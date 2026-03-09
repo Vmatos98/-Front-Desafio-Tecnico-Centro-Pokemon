@@ -7,13 +7,13 @@ export const authService = {
     return data;
   },
 
-  async register(credentials: RegisterCredentials): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>('/auth/register', credentials);
+  register: async (credentials: RegisterCredentials): Promise<{ access_token: string }> => {
+    const { data } = await api.post('/auth/register', credentials);
     return data;
   },
   
-  async getProfile(): Promise<User> {
-    const { data } = await api.get<User>('/auth/profile');
+  getProfile: async (): Promise<User> => {
+    const { data } = await api.get('/auth/profile');
     return data;
   }
 };
