@@ -8,33 +8,37 @@ interface PokemonCardProps {
   currentUserId?: number;
   onEdit?: (pokemon: Pokemon) => void;
   onDelete?: (pokemon: Pokemon) => void;
+  size?: 'normal' | 'small';
 }
 
 export const PokemonCard: React.FC<PokemonCardProps> = ({ 
   pokemon, 
   currentUserId,
   onEdit,
-  onDelete
+  onDelete,
+  size = 'normal'
 }) => {
   const isOwner = currentUserId !== undefined && pokemon.userId === currentUserId;
 
-  // Format ID to 3 digits (e.g., #025)
   const formattedId = `#${pokemon.pokedexNumber.toString().padStart(3, '0')}`;
 
+  const isSmall = size === 'small';
+
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-all duration-300 group shadow-sm hover:shadow-lg">
-      <div className="relative h-48 bg-zinc-800 flex items-center justify-center p-6">
-        {/* Type Badge */}
-        <div className="absolute top-3 left-3 px-3 py-1 bg-zinc-900/80 backdrop-blur-md rounded-full text-xs font-semibold text-zinc-300 border border-zinc-700/50 uppercase tracking-wider">
-          {pokemon.type}
-        </div>
-        
-        {/* Pokedex Number */}
-        <div className="absolute top-3 right-3 text-sm font-bold text-zinc-500">
-          {formattedId}
+    <div className={`bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-all duration-300 group shadow-sm hover:shadow-lg flex flex-col ${isSmall ? 'h-full' : ''}`}>
+      <div className={`relative bg-zinc-800 flex items-center justify-center p-6 ${isSmall ? 'h-32' : 'h-48'}`}>
+        <div className="absolute top-2 left-2 right-2 flex justify-between items-center gap-1 z-10">
+          <div 
+            className={`px-2 py-0.5 bg-zinc-900/80 backdrop-blur-md rounded-full ${isSmall ? 'text-[9px]' : 'text-xs'} font-semibold text-zinc-300 border border-zinc-700/50 uppercase tracking-wider truncate shrink`}
+            title={pokemon.type}
+          >
+            {pokemon.type}
+          </div>
+          <div className={`${isSmall ? 'text-xs' : 'text-sm'} font-bold text-zinc-500 shrink-0 bg-zinc-900/60 px-1.5 py-0.5 rounded-md backdrop-blur-sm`}>
+            {formattedId}
+          </div>
         </div>
 
-        {/* Pokemon Image */}
         <div className="relative w-full h-full drop-shadow-2xl group-hover:scale-110 transition-transform duration-300">
           {pokemon.imageUrl ? (
             <Image 
@@ -52,17 +56,16 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="mb-4">
-          <h3 className="text-xl font-bold text-zinc-100 capitalize mb-1">{pokemon.name}</h3>
-          <div className="flex items-center gap-4 text-sm text-zinc-400">
+      <div className={`p-4 flex flex-col flex-grow justify-between ${isSmall ? 'p-4' : 'p-5'}`}>
+        <div>
+          <h3 className={`${isSmall ? 'text-lg' : 'text-xl'} font-bold text-zinc-100 capitalize mb-1 line-clamp-1`}>{pokemon.name}</h3>
+          <div className="flex items-center gap-2 lg:gap-4 text-xs lg:text-sm text-zinc-400">
             <span>Nvl {pokemon.level}</span>
             <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
             <span>HP {pokemon.hp}</span>
           </div>
         </div>
 
-        {/* Action Buttons - Conditionally Rendered based on Ownership */}
         {isOwner ? (
           <div className="flex items-center gap-2 pt-4 border-t border-zinc-800">
             <button 
