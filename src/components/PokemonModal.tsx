@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { Pokemon, CreatePokemonDto, UpdatePokemonDto } from '../types/pokemon';
 import { pokemonService } from '../services/pokemon';
@@ -61,6 +62,7 @@ export const PokemonModal: React.FC<PokemonModalProps> = ({
       setSearchedPokemon(result);
       setLevel(1);
       setHp(result.hp);
+      toast.success('Pokémon encontrado!', { id: 'search-success' });
     } catch (err) {
       console.error('Search failed', err);
       setError('Pokémon não encontrado. Verifique o nome e tente novamente.');
@@ -88,6 +90,7 @@ export const PokemonModal: React.FC<PokemonModalProps> = ({
         };
 
         const newPokemon = await pokemonService.create(payload);
+        toast.success(`${searchedPokemon.name} capturado com sucesso!`);
         onSuccess(newPokemon, 'add');
       } else if (mode === 'edit' && initialData) {
         const payload: UpdatePokemonDto = {
@@ -95,12 +98,14 @@ export const PokemonModal: React.FC<PokemonModalProps> = ({
           hp: hp
         };
         const updatedPokemon = await pokemonService.update(initialData.id, payload);
+        toast.success(`Alterações salvas com sucesso!`);
         onSuccess(updatedPokemon, 'edit');
       }
       
       onClose();
     } catch (err) {
       console.error('Submit failed', err);
+      toast.error('Ocorreu um erro ao salvar o Pokémon.');
       setError('Ocorreu um erro ao salvar o Pokémon.');
     } finally {
       setIsLoading(false);

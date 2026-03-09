@@ -6,9 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { LogIn } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -17,8 +18,9 @@ export default function LoginPage() {
     if (!email || !password) return;
     try {
       await login({ email, password });
-    } catch {
-      // Error is handled by the useAuth hook and displayed below
+    } catch (err) {
+      const axiosError = err as import('axios').AxiosError<{message: string}>;
+      toast.error(axiosError?.response?.data?.message || 'Erro ao realizar login. Verifique suas credenciais.');
     }
   };
 
@@ -35,12 +37,6 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Centro Pokémon</h1>
           <p className="text-zinc-400 text-sm">Bem-vindo de volta. Acesse sua conta aqui!.</p>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-            <p className="text-sm text-red-700 font-medium">{error}</p>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
