@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { setCookie, deleteCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { authService } from '../services/auth';
@@ -11,7 +11,7 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = useCallback(async (credentials: LoginCredentials) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -38,9 +38,9 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
-  const register = async (credentials: RegisterCredentials) => {
+  const register = useCallback(async (credentials: RegisterCredentials) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -59,13 +59,13 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [login]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     deleteCookie('sim_int_token');
     delete api.defaults.headers.common['Authorization'];
     router.push('/login');
-  };
+  }, [router]);
 
   return {
     login,
