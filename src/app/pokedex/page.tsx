@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PokemonCard } from '@/components/PokemonCard';
 import { PokemonModal, ModalMode } from '@/components/PokemonModal';
 import { LogOut, Loader2, User as UserIcon, Send } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
 
 export default function PokedexPage() {
@@ -88,10 +89,11 @@ export default function PokedexPage() {
     try {
       await pokemonService.remove(pokemonToTransfer.id);
       setMyPokemons(prev => prev.filter(p => p.id !== pokemonToTransfer.id));
+      toast.success(`${pokemonToTransfer.name} transferido com sucesso.`);
       setPokemonToTransfer(null);
     } catch (err) {
       console.error('Failed to transfer pokemon', err);
-      alert('Não foi possível transferir o Pokémon.');
+      toast.error('Não foi possível transferir o Pokémon.');
     }
   };
 

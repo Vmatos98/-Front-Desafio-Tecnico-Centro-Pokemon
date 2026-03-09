@@ -6,9 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { UserPlus } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
-  const { register, isLoading, error } = useAuth();
+  const { register, isLoading } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,8 +19,10 @@ export default function RegisterPage() {
     if (!name || !email || !password) return;
     try {
       await register({ name, email, password });
-    } catch {
-      // Error is handled by the useAuth hook and displayed below
+      toast.success('Conta criada com sucesso!');
+    } catch (err) {
+      const axiosError = err as import('axios').AxiosError<{message: string}>;
+      toast.error(axiosError?.response?.data?.message || 'Erro ao criar conta. Verifique os dados fornecidos.');
     }
   };
 
@@ -36,12 +39,6 @@ export default function RegisterPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Centro Pokémon</h1>
           <p className="text-zinc-400 text-sm">Cadastre-se na nossa rede de treinadores.</p>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-            <p className="text-sm text-red-700 font-medium">{error}</p>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
