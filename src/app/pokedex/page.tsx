@@ -12,9 +12,10 @@ import { AxiosError } from 'axios';
 
 export default function PokedexPage() {
   const { logout } = useAuth();
-  
+
   const [user, setUser] = useState<User | null>(null);
-  const [pokemons, setPokemons] = useState<Pokemon[]>([]);
+  const [myPokemons, setMyPokemons] = useState<Pokemon[]>([]);
+  const [communityPokemons, setCommunityPokemons] = useState<Pokemon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,27 +23,24 @@ export default function PokedexPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const profile = await authService.getProfile();
       setUser(profile);
 
-      // Fetch both lists in parallel
-      const [myPokemons, otherPokemons] = await Promise.all([
+      const [fetchedMine, fetchedOthers] = await Promise.all([
         pokemonService.getMine(),
         pokemonService.getOthers()
       ]);
 
-      // Combine and optionally sort by ID or creation date
-      const combined = [...myPokemons, ...otherPokemons].sort((a, b) => b.id - a.id);
-      setPokemons(combined);
+      setMyPokemons(fetchedMine.sort((a, b) => b.id - a.id));
+      setCommunityPokemons(fetchedOthers.sort((a, b) => b.id - a.id));
     } catch (err: unknown) {
       console.error('Failed to fetch Pokedex data:', err);
-      // Assuming 401 means token expired
       const axiosError = err as AxiosError;
       if (axiosError?.response?.status === 401) {
-         logout();
+        logout();
       } else {
-         setError('Não foi possível carregar os dados da Pokédex. Tente novamente mais tarde.');
+        setError('Não foi possível carregar os dados da Pokédex. Tente novamente mais tarde.');
       }
     } finally {
       setIsLoading(false);
@@ -54,16 +52,14 @@ export default function PokedexPage() {
   }, [fetchData]);
 
   const handleEdit = (pokemon: Pokemon) => {
-    // TBD: Implement edit modal
     console.log('Edit pokemon', pokemon);
   };
 
   const handleDelete = async (pokemon: Pokemon) => {
-    // TBD: Implement actual UI confirmation vs simple confirm
     if (window.confirm(`Tem certeza que deseja transferir o ${pokemon.name}?`)) {
       try {
         await pokemonService.remove(pokemon.id);
-        setPokemons(prev => prev.filter(p => p.id !== pokemon.id));
+        setMyPokemons(prev => prev.filter(p => p.id !== pokemon.id));
       } catch (err) {
         console.error('Failed to delete pokemon', err);
         alert('Não foi possível excluir o Pokémon.');
@@ -73,7 +69,6 @@ export default function PokedexPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 font-sans text-white">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -100,7 +95,7 @@ export default function PokedexPage() {
                 </div>
               </div>
             )}
-            
+
             <button
               onClick={logout}
               className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-2"
@@ -112,26 +107,24 @@ export default function PokedexPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8 relative">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">Painel da Pokédex</h2>
             <p className="text-zinc-400 text-sm">Gerencie seus Pokémons e explore a rede global.</p>
           </div>
-          <button 
-             className="bg-zinc-100 text-zinc-950 hover:bg-white px-5 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-white flex items-center justify-center"
-             onClick={() => alert('Add Pokemon Modal here!')}
+          <button
+            className="bg-zinc-100 text-zinc-950 hover:bg-white px-5 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-white flex items-center justify-center"
+            onClick={() => alert('Add Pokemon Modal here!')}
           >
-             + Capturar Pokémon
+            + Capturar Pokémon
           </button>
         </div>
 
-        {/* Status / Loading / Error Layers */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-zinc-500 animate-spin mb-4" />
-            <p className="text-zinc-400 font-medium">Sincronizando com a rede neural...</p>
+            <p className="text-zinc-400 font-medium">Sincronizando com a central Pokédex...</p>
           </div>
         ) : error ? (
           <div className="bg-red-950/20 border border-red-900/50 rounded-2xl p-6 text-center">
@@ -140,27 +133,69 @@ export default function PokedexPage() {
               Tentar Novamente
             </button>
           </div>
-        ) : pokemons.length === 0 ? (
+        ) : myPokemons.length === 0 && communityPokemons.length === 0 ? (
           <div className="bg-zinc-900/50 border border-zinc-800 border-dashed rounded-3xl p-12 text-center">
-             <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl opacity-50">?</span>
-             </div>
-             <h3 className="text-lg font-semibold text-zinc-200 mb-1">Nenhum Pokémon Encontrado</h3>
-             <p className="text-zinc-500 text-sm max-w-sm mx-auto">
-                A Pokédex está vazia. Comece a sua jornada clicando em &quot;Capturar Pokémon&quot; no topo!
-             </p>
+            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl opacity-50">?</span>
+            </div>
+            <h3 className="text-lg font-semibold text-zinc-200 mb-1">Nenhum Pokémon Encontrado</h3>
+            <p className="text-zinc-500 text-sm max-w-sm mx-auto">
+              A Pokédex está vazia. Comece a sua jornada clicando em &quot;Capturar Pokémon&quot; no topo!
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {pokemons.map((pokemon) => (
-              <PokemonCard 
-                key={pokemon.id} 
-                pokemon={pokemon} 
-                currentUserId={user?.id ? Number(user.id) : undefined} 
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
+          <div className="space-y-12">
+
+            <section>
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                Meus Pokémons
+                <span className="bg-zinc-800 text-zinc-400 py-0.5 px-2.5 rounded-full text-sm font-medium">
+                  {myPokemons.length}
+                </span>
+              </h3>
+
+              {myPokemons.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {myPokemons.map((pokemon) => (
+                    <PokemonCard
+                      key={pokemon.id}
+                      pokemon={pokemon}
+                      currentUserId={user?.id ? Number(user.id) : undefined}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      size="normal"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 border border-zinc-800 border-dashed rounded-2xl text-center">
+                  <p className="text-zinc-500 text-sm">Você ainda não capturou nenhum Pokémon.</p>
+                </div>
+              )}
+            </section>
+
+            {communityPokemons.length > 0 && (
+              <section className="pt-8 border-t border-zinc-800/50">
+                <h3 className="text-lg font-bold text-zinc-300 mb-6 flex items-center gap-2">
+                  Pokémons da Comunidade
+                  <span className="bg-zinc-800/50 text-zinc-500 py-0.5 px-2.5 rounded-full text-xs font-medium border border-zinc-800">
+                    {communityPokemons.length}
+                  </span>
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {communityPokemons.map((pokemon) => (
+                    <PokemonCard
+                      key={pokemon.id}
+                      pokemon={pokemon}
+                      currentUserId={user?.id ? Number(user.id) : undefined}
+                      size="small"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
           </div>
         )}
       </main>
