@@ -7,7 +7,8 @@ import { authService } from '@/services/auth';
 import { pokemonService } from '@/services/pokemon';
 import { useAuth } from '@/hooks/useAuth';
 import { PokemonCard } from '@/components/PokemonCard';
-import { LogOut, Loader2, User as UserIcon } from 'lucide-react';
+import { PokemonModal, ModalMode } from '@/components/PokemonModal';
+import { LogOut, Loader2, User as UserIcon, Send } from 'lucide-react';
 import { AxiosError } from 'axios';
 
 export default function PokedexPage() {
@@ -18,6 +19,12 @@ export default function PokedexPage() {
   const [communityPokemons, setCommunityPokemons] = useState<Pokemon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<ModalMode>('add');
+  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | undefined>(undefined);
+  
+  const [pokemonToTransfer, setPokemonToTransfer] = useState<Pokemon | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -52,19 +59,44 @@ export default function PokedexPage() {
   }, [fetchData]);
 
   const handleEdit = (pokemon: Pokemon) => {
-    console.log('Edit pokemon', pokemon);
+    setSelectedPokemon(pokemon);
+    setModalMode('edit');
+    setIsModalOpen(true);
   };
 
-  const handleDelete = async (pokemon: Pokemon) => {
-    if (window.confirm(`Tem certeza que deseja transferir o ${pokemon.name}?`)) {
-      try {
-        await pokemonService.remove(pokemon.id);
-        setMyPokemons(prev => prev.filter(p => p.id !== pokemon.id));
-      } catch (err) {
-        console.error('Failed to delete pokemon', err);
-        alert('Não foi possível excluir o Pokémon.');
-      }
+  const handleCreateNew = () => {
+    setSelectedPokemon(undefined);
+    setModalMode('add');
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = (pokemon: Pokemon, mode: ModalMode) => {
+    if (mode === 'add') {
+      setMyPokemons(prev => [pokemon, ...prev]);
+    } else if (mode === 'edit') {
+      setMyPokemons(prev => prev.map(p => p.id === pokemon.id ? pokemon : p));
     }
+  };
+
+  const handleDeleteRequest = (pokemon: Pokemon) => {
+    setPokemonToTransfer(pokemon);
+  };
+
+  const confirmTransfer = async () => {
+    if (!pokemonToTransfer) return;
+
+    try {
+      await pokemonService.remove(pokemonToTransfer.id);
+      setMyPokemons(prev => prev.filter(p => p.id !== pokemonToTransfer.id));
+      setPokemonToTransfer(null);
+    } catch (err) {
+      console.error('Failed to transfer pokemon', err);
+      alert('Não foi possível transferir o Pokémon.');
+    }
+  };
+
+  const cancelTransfer = () => {
+    setPokemonToTransfer(null);
   };
 
   return (
@@ -115,7 +147,7 @@ export default function PokedexPage() {
           </div>
           <button
             className="bg-zinc-100 text-zinc-950 hover:bg-white px-5 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-white flex items-center justify-center"
-            onClick={() => alert('Add Pokemon Modal here!')}
+            onClick={handleCreateNew}
           >
             + Capturar Pokémon
           </button>
@@ -162,7 +194,7 @@ export default function PokedexPage() {
                       pokemon={pokemon}
                       currentUserId={user?.id ? Number(user.id) : undefined}
                       onEdit={handleEdit}
-                      onDelete={handleDelete}
+                      onDelete={handleDeleteRequest}
                       size="normal"
                     />
                   ))}
@@ -198,6 +230,39 @@ export default function PokedexPage() {
 
           </div>
         )}
+        
+        <PokemonModal 
+          isOpen={isModalOpen}
+          mode={modalMode}
+          initialData={selectedPokemon}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleModalSuccess}
+        />
+
+        {pokemonToTransfer && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={cancelTransfer} />
+            <div className="relative bg-zinc-950 border border-zinc-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+               <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-500/20">
+                 <Send className="w-8 h-8 text-orange-500" />
+               </div>
+               <h3 className="text-xl font-bold text-white mb-2 capitalize">Transferir {pokemonToTransfer.name}?</h3>
+               <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                 O Professor Oak conta com a sua ajuda para catalogar e estudar o comportamento dos Pokémon em diferentes habitats. Ao enviar seu companheiro para o Laboratório de Pesquisa, você contribui para a ciência do mundo Pokémon.<br/><br/>
+                 <strong className="text-orange-400 font-semibold">Esta é uma viajem só de ida. Não poderá desfazer essa ação.</strong>
+               </p>
+               <div className="flex gap-3">
+                 <button onClick={cancelTransfer} className="flex-1 py-3 px-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded-xl font-semibold transition-colors">
+                   Cancelar
+                 </button>
+                 <button onClick={confirmTransfer} className="flex-1 py-3 px-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold transition-colors shadow-lg shadow-orange-900/20">
+                   Tem certeza?
+                 </button>
+               </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
