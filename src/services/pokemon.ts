@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Pokemon, CreatePokemonDto, UpdatePokemonDto } from '../types/pokemon';
+import { Pokemon, CreatePokemonDto, UpdatePokemonDto, PaginatedResponse } from '../types/pokemon';
 
 export const pokemonService = {
   searchExternal: async (query: string): Promise<CreatePokemonDto> => {
@@ -12,13 +12,13 @@ export const pokemonService = {
     return data;
   },
 
-  getMine: async (): Promise<Pokemon[]> => {
-    const { data } = await api.get<Pokemon[]>('/pokemon/mine');
+  findAllMine: async (page: number = 1): Promise<PaginatedResponse<Pokemon>> => {
+    const { data } = await api.get<PaginatedResponse<Pokemon>>(`/pokemon/mine?page=${page}`);
     return data;
   },
 
-  getOthers: async (): Promise<Pokemon[]> => {
-    const { data } = await api.get<Pokemon[]>('/pokemon/others');
+  findAllOthers: async (page: number = 1): Promise<PaginatedResponse<Pokemon>> => {
+    const { data } = await api.get<PaginatedResponse<Pokemon>>(`/pokemon/others?page=${page}`);
     return data;
   },
 

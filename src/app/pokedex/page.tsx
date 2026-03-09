@@ -8,7 +8,7 @@ import { pokemonService } from '@/services/pokemon';
 import { useAuth } from '@/hooks/useAuth';
 import { PokemonCard } from '@/components/PokemonCard';
 import { PokemonModal, ModalMode } from '@/components/PokemonModal';
-import { LogOut, Loader2, User as UserIcon, Send } from 'lucide-react';
+import { LogOut, Loader2, User as UserIcon, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
 
@@ -18,6 +18,12 @@ export default function PokedexPage() {
   const [user, setUser] = useState<User | null>(null);
   const [myPokemons, setMyPokemons] = useState<Pokemon[]>([]);
   const [communityPokemons, setCommunityPokemons] = useState<Pokemon[]>([]);
+  
+  const [myPage, setMyPage] = useState(1);
+  const [myTotalPages, setMyTotalPages] = useState(1);
+  const [communityPage, setCommunityPage] = useState(1);
+  const [communityTotalPages, setCommunityTotalPages] = useState(1);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,12 +42,15 @@ export default function PokedexPage() {
       setUser(profile);
 
       const [fetchedMine, fetchedOthers] = await Promise.all([
-        pokemonService.getMine(),
-        pokemonService.getOthers()
+        pokemonService.findAllMine(myPage),
+        pokemonService.findAllOthers(communityPage)
       ]);
 
-      setMyPokemons(fetchedMine.sort((a, b) => b.id - a.id));
-      setCommunityPokemons(fetchedOthers.sort((a, b) => b.id - a.id));
+      setMyPokemons(fetchedMine.data.sort((a: Pokemon, b: Pokemon) => b.id - a.id));
+      setMyTotalPages(fetchedMine.meta.totalPages);
+
+      setCommunityPokemons(fetchedOthers.data.sort((a: Pokemon, b: Pokemon) => b.id - a.id));
+      setCommunityTotalPages(fetchedOthers.meta.totalPages);
     } catch (err: unknown) {
       console.error('Failed to fetch Pokedex data:', err);
       const axiosError = err as AxiosError;
@@ -53,7 +62,7 @@ export default function PokedexPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [logout]);
+  }, [logout, myPage, communityPage]);
 
   useEffect(() => {
     fetchData();
@@ -206,6 +215,28 @@ export default function PokedexPage() {
                   <p className="text-zinc-500 text-sm">Você ainda não capturou nenhum Pokémon.</p>
                 </div>
               )}
+              
+              {myTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-8">
+                  <button
+                    disabled={myPage === 1}
+                    onClick={() => setMyPage(p => Math.max(1, p - 1))}
+                    className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="text-sm font-medium text-zinc-500">
+                    Página <span className="text-white">{myPage}</span> de {myTotalPages}
+                  </span>
+                  <button
+                    disabled={myPage === myTotalPages}
+                    onClick={() => setMyPage(p => Math.min(myTotalPages, p + 1))}
+                    className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </section>
 
             {communityPokemons.length > 0 && (
@@ -227,6 +258,28 @@ export default function PokedexPage() {
                     />
                   ))}
                 </div>
+
+                {communityTotalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-8">
+                    <button
+                      disabled={communityPage === 1}
+                      onClick={() => setCommunityPage(p => Math.max(1, p - 1))}
+                      className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-sm font-medium text-zinc-500">
+                      Página <span className="text-white">{communityPage}</span> de {communityTotalPages}
+                    </span>
+                    <button
+                      disabled={communityPage === communityTotalPages}
+                      onClick={() => setCommunityPage(p => Math.min(communityTotalPages, p + 1))}
+                      className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </section>
             )}
 
