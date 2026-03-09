@@ -2,8 +2,8 @@ import { api } from './api';
 import { Pokemon, CreatePokemonDto, UpdatePokemonDto } from '../types/pokemon';
 
 export const pokemonService = {
-  searchExternal: async (query: string): Promise<Record<string, unknown>> => {
-    const { data } = await api.get(`/pokemon/search/${query}`);
+  searchExternal: async (query: string): Promise<CreatePokemonDto> => {
+    const { data } = await api.get<CreatePokemonDto>(`/pokemon/search/${query}`);
     return data;
   },
 

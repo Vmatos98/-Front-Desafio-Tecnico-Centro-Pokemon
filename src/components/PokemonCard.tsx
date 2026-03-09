@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pokemon } from '../types/pokemon';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Send } from 'lucide-react';
 import Image from 'next/image';
 
 interface PokemonCardProps {
@@ -77,10 +77,10 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({
             </button>
             <button 
               onClick={() => onDelete?.(pokemon)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-red-950/30 hover:bg-red-900/50 text-red-500 transition-colors text-sm font-semibold border border-red-900/20"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-orange-950/30 hover:bg-orange-900/50 text-orange-500 transition-colors text-sm font-semibold border border-orange-900/20"
             >
-              <Trash2 className="w-4 h-4" />
-              Excluir
+              <Send className="w-4 h-4" />
+              Transferir
             </button>
           </div>
         ) : (
